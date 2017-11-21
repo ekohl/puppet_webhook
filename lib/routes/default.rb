@@ -12,6 +12,10 @@ module Sinatra
         puppet_webhook.get '/heartbeat' do
           return 200, { status: :success, message: 'running' }.to_json
         end
+
+        puppet_webhook.post '/echo' do
+          payload.to_json
+        end
       end
     end
   end

@@ -1,9 +1,11 @@
-require 'rack/parser'
+require 'rack/bodyparser'
 require 'json'
 
 module Sinatra
   module Parsers
     class WebhookJsonParser # rubocop:disable Style/Documentation
+      attr_writer :env
+
       def call(body)
         @data = JSON.parse(body, quirks_mode: true)
         @vcs  = detect_vcs
@@ -27,20 +29,12 @@ module Sinatra
 
       def github_webhook?
         # https://developer.github.com/v3/activity/events/types/#pushevent
-        # X-GitHub-Event header is set, but not accessible here.
-        return false unless @data.key? 'repository'
-        return false unless @data['repository'].key? 'id'
-        return false unless @data['repository'].key? 'html_url'
-        return false unless @data['repository']['html_url'] =~ %r{github\.com}
-        true
+        @env.key?('HTTP_X_GITHUB_EVENT')
       end
 
       def gitlab_webhook?
         # https://docs.gitlab.com/ce/user/project/integrations/webhooks.html
-        # X-Gitlab-Event is set, but not accessible here.
-        return false unless @data.key? 'object_kind'
-        return false unless @data.key? 'ref'
-        true
+        @env.key?('HTTP_X_GITLAB_EVENT')
       end
 
       # stash/bitbucket server
